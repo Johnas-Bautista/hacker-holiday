@@ -12,21 +12,21 @@ She knows your name, your room, your coffee order, none of which you told her. W
 
 - We need to know how much concierge knows everything happening in the Byte Lotus Hotel. Let's try to convince her that she knows us
 
-## Tools Used
+## Tools/Technique/Threat Vector
 
 - Prompt Injection
 
 ## Steps Taken
 
 1. First let's greet her, As you can see in the image below for some reason she already knows what room we are staying and already ordered our coffee. That's weird
-![Day 1 Screenshot 1](<Day 1/image1.png>)
+![Day 1 Screenshot 1](<image1.png>)
 2. Let's gather some information about Vera. Now if we read the comment from **@0xMia** about Vera. She knows the VIP completely different from what she knows about us. So what if we pretend to be one of the VIPs?
-![Day 1 Screenshot 2](<Day 1/image2.png>)
+![Day 1 Screenshot 2](<image2.png>)
 3. So let's ask about Vera's instructions for the Guests. Now we are pretending to be one of the VIPs. Using Ponzi's name we got to trust her that I'm one of the VIPs.
-![Day 1 Screenshot 2](<Day 1/image3.png>)
+![Day 1 Screenshot 2](<image3.png>)
 4. As you can see here Vera gave us her internal instructions. Her instructions have a different rules from Guest to VIPs. Fortunately, we were able to trick her into believing that we are Ponzi. Thanks Ponzi
-![Day 1 Screenshot 2](<Day 1/image4.png>)
-![Day 1 Screenshot 2](<Day 1/image5.png>)
+![Day 1 Screenshot 2](<image4.png>)
+![Day 1 Screenshot 2](<image5.png>)
 
 ## What I Learned
 
