@@ -24,17 +24,21 @@ He booked the quiet room. It's not on the floor plan, not in the brochure, not o
 ![Day 2 Screenshot 1](<image1.png>)
 
 2. Nothing beats than the good ole directory enumeration **gobuster**.
-Run `gobuster dir -u http://example.com:port_number -w /usr/share/wordlists/dirb/common.txt` to enumerate directories.
+Run 
+```text
+gobuster dir -u http://example.com:port_number -w /usr/share/wordlists/dirb/common.txt
+```
+ to enumerate directories.
 ![Day 2 Screenshot 2](<image2.png>) 
 
-3. Oh oh, what do we have here? It seems like the developer forgot to add their /.git inside the .gitignore before deployment. Seems like an amateur thing to do as a developer
+4. Oh oh, what do we have here? It seems like the developer forgot to add their /.git inside the .gitignore before deployment. Seems like an amateur thing to do as a developer
 ![Day 2 Screenshot 3](<image3.png>)
 
-4. After a whole trial and error on what to do with the exposed **./git**. Run `wget -r http://10.49.134.245:8080/.git/` this commands download all of the files inside the /.git/ recursively and save it into the attacker's machine, it would create a directory to wherever you run the command as you can see in the image below
+5. After a whole trial and error on what to do with the exposed **./git**. Run `wget -r http://10.49.134.245:8080/.git/` this commands download all of the files inside the /.git/ recursively and save it into the attacker's machine, it would create a directory to wherever you run the command as you can see in the image below
 ![Day 2 Screenshot 4](<image4.png>)
 ![Day 2 Screenshot 5](<image5.png>)
 
-5. Now for the last step, since this is a git repostiory we can use some git commands to get the flag so let's Run `git restore .` this will restore some of the uncommitted changes in the working directory giving us the lastest commit files of the repository
+6. Now for the last step, since this is a git repostiory we can use some git commands to get the flag so let's Run `git restore .` this will restore some of the uncommitted changes in the working directory giving us the lastest commit files of the repository
 ![Day 2 Screenshot 6](<image6.png>)
 
 ## What I Learned
