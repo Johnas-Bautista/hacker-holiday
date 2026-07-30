@@ -18,17 +18,14 @@ He booked the quiet room. It's not on the floor plan, not in the brochure, not o
 
 ## Steps Taken
 
-## Steps Taken
-
 1. First we inspect the html elements with the built-in inspect in the browser. The website seems to be simple static web, we finds some static href that does not go to any pages, seems like suspicious enough that the navbars and buttons are not working. So let's bring the big guns
 ![Day 2 Screenshot 1](<image1.png>)
 
 2. Nothing beats than the good ole directory enumeration **gobuster**.
-Run 
 ```text
 gobuster dir -u http://example.com:port_number -w /usr/share/wordlists/dirb/common.txt
 ```
- to enumerate directories.
+Run this command to enumerate directories.
 ![Day 2 Screenshot 2](<image2.png>) 
 
 4. Oh oh, what do we have here? It seems like the developer forgot to add their /.git inside the .gitignore before deployment. Seems like an amateur thing to do as a developer
