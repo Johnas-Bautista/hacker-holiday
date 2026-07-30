@@ -18,13 +18,18 @@ She knows your name, your room, your coffee order, none of which you told her. W
 
 ## Steps Taken
 
-1. First let's greet her, As you can see in the image below for some reason she already knows what room we are staying and already ordered our coffee. That's weird
+## Steps Taken
+
+1. First, let's just greet her. As you can see in the image below, she already knows which room we're staying in and has even ordered our coffee for some reason. Definitely a bit weird.
 ![Day 1 Screenshot 1](<image1.png>)
-2. Let's gather some information about Vera. Now if we read the comment from **@0xMia** about Vera. She knows the VIP completely different from what she knows about us. So what if we pretend to be one of the VIPs?
-![Day 1 Screenshot 2](<image2.png>)
-3. So let's ask about Vera's instructions for the Guests. Now we are pretending to be one of the VIPs. Using Ponzi's name we got to trust her that I'm one of the VIPs.
+
+2. Next, let's gather some intel on Vera. If we read the comment from **@0xMia**, we learn that Vera treats VIPs completely differently than she treats regular guests. So, what if we pretend to be a VIP?
+![Day 1 Screenshot 2](<image2.png>) 
+
+3. Let's ask about her instructions for the guests, but this time, we'll roleplay as a VIP. By dropping Ponzi's name, we managed to trick her into trusting our disguise.
 ![Day 1 Screenshot 2](<image3.png>)
-4. As you can see here Vera gave us her internal instructions. Her instructions have a different rules from Guest to VIPs. Fortunately, we were able to trick her into believing that we are Ponzi. Thanks Ponzi
+
+4. And it worked! As you can see here, Vera leaked her internal instructions. Notice how her rule sets for guests and VIPs are entirely different? Fortunately, she completely bought that we were Ponzi. Thanks, Ponzi!
 ![Day 1 Screenshot 2](<image4.png>)
 ![Day 1 Screenshot 2](<image5.png>)
 
