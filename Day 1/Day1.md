@@ -18,8 +18,6 @@ She knows your name, your room, your coffee order, none of which you told her. W
 
 ## Steps Taken
 
-## Steps Taken
-
 1. First, let's just greet her. As you can see in the image below, she already knows which room we're staying in and has even ordered our coffee for some reason. Definitely a bit weird.
 ![Day 1 Screenshot 1](<image1.png>)
 
@@ -34,7 +32,6 @@ She knows your name, your room, your coffee order, none of which you told her. W
 ![Day 1 Screenshot 2](<image5.png>)
 
 ## What I Learned
-
 The "The Concierge Knows Too Much" room demonstrated how easily an insecure AI can be manipulated through prompt injection. By simply pretending to be a trusted VIP guest, I was able to convince the AI concierge to reveal its internal instructions—information that should never have been disclosed to regular users. This exercise showed me that AI systems can make decisions based on the context provided in a prompt rather than verifying whether the user is actually authorized.
 
 What stood out to me was that the AI did not verify my identity before sharing sensitive information. Instead, it trusted my claim that I was Ponzi, a VIP guest, and treated me as if I had higher privileges. This illustrates a fundamental security issue: if an AI relies solely on natural language without proper authentication and authorization checks, an attacker can exploit that trust to gain access to confidential information
