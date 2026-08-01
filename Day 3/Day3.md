@@ -1,14 +1,20 @@
 # Day 3
+
 ## Room Name
+
 Complimentary
 
 ## Summary
+
 Install the free app and it hands your phone a set of cloud keys, the same set it hands everyone. They're read-only, but read-only of every guest's contacts, location, and passwords, not just Lambo's. She gave consent. Technically.
 
 ## Objective
+
 Find out how the app knows anything about you at all, and see what else it's willing to hand over.
 
 ## Tools/Technique/Threat Vector
+
+AWS IAM Misconfiguration
 
 ## Steps Taken
 
@@ -97,6 +103,3 @@ The gap wasn't a bug in a single API call — it was an assumption that the app'
 
 **Practical takeaway for defense:**
 Whenever an app grants direct client-side access to AWS resources (via Cognito or similar), the IAM policy — not the frontend — must enforce row-level isolation. A `LeadingKeys` condition scoping DynamoDB access to `${cognito-identity.amazonaws.com:sub}` is the specific fix that would have prevented this entire chain from working.
-
----
-
