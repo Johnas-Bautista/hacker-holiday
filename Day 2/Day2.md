@@ -1,8 +1,4 @@
-# Day 2
-
-## Room Name
-
-Room 404
+# Day 2 — Room 404
 
 ## Summary
 
@@ -10,11 +6,15 @@ He booked the quiet room. It's not on the floor plan, not in the brochure, not o
 
 ## Objective
 
-- We need to figure out what he's hiding in the unlisted suite on the web server at `http://<VICTIM_MACHINE_IP>:8080`. Let's rattle some digital doorknobs and uncover the hidden paths he thought were safe.
+Investigate the web server at `http://<VICTIM_MACHINE_IP>:8080` to uncover hidden, unlisted paths and determine what's being concealed within them.
 
-## Tools/Technique/Threat Vector
+## Tools / Techniques / Threat Vectors
 
-- Path Traversal
+- Directory Enumeration (Gobuster)
+- Exposed `.git` Repository Disclosure
+- Git History Recovery (`wget`, `git restore`)
+
+---
 
 ## Steps Taken
 

@@ -1,20 +1,21 @@
-# Day 3
-
-## Room Name
-
-Complimentary
+# Day 3 — Complimentary
 
 ## Summary
 
-Install the free app and it hands your phone a set of cloud keys, the same set it hands everyone. They're read-only, but read-only of every guest's contacts, location, and passwords, not just Lambo's. She gave consent. Technically.
+Install the free app and it hands your phone a set of cloud keys — the same set it hands everyone. They're read-only, but read-only of every guest's contacts, location, and passwords, not just Lambo's. She gave consent. Technically.
 
 ## Objective
 
-Find out how the app knows anything about you at all, and see what else it's willing to hand over.
+Determine how the app identifies users without a login screen, and uncover what other data it's willing to expose along the way.
 
-## Tools/Technique/Threat Vector
+## Tools / Techniques / Threat Vectors
 
-AWS IAM Misconfiguration
+- Client-Side Source Review
+- AWS Cognito Identity Pool Abuse
+- IAM Misconfiguration (Overly Permissive Unauthenticated Role)
+- DynamoDB Enumeration (`scan`)
+
+---
 
 ## Steps Taken
 

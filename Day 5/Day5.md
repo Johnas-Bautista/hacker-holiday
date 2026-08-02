@@ -1,21 +1,22 @@
-# Day 5
-
-## Room Name
-
-Beach Bar
+# Day 5 — Beach Bar
 
 ## Summary
 
-At the Beach Bar, even shell access is complimentary. The jukebox takes requests. Any kind.
+At the Beach Bar, even shell access is complimentary — the jukebox takes requests... *any* kind. A leftover demo login opens the door to a playlist import feature that trusts user-supplied YAML a little too much, turning a simple upload into full remote code execution.
 
 ## Objective
 
-Find out the flag for the user and root
+Compromise the target machine and retrieve both the **user flag** and the **root flag**.
 
-## Tools/Technique/Threat Vector
+## Tools / Techniques / Threat Vectors
 
-* Web Attack/Exploitation
-* Remote Code Exection
+- Web Reconnaissance (`nmap`, `gobuster`)
+- Information Disclosure (hardcoded credentials in HTML comments)
+- Insecure YAML Deserialization (CWE-502)
+- Remote Code Execution (RCE)
+- Privilege Escalation via Exposed Process Arguments
+
+---
 
 ## Steps Taken
 

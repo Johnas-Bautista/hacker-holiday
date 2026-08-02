@@ -1,8 +1,4 @@
-# Day 4
-
-## Room Name
-
-Packed Light
+# Day 4 — Packed Light
 
 ## Summary
 
@@ -10,11 +6,16 @@ Tiny packets. Odd hours. Suspiciously regular. Someone's smuggling out the data 
 
 ## Objective
 
-Find out Somewhere in that traffic, a quiet little errand is running on a loop, and it isn't part of any service the hotel actually offers.
+Analyze the provided packet capture to uncover a covert process running in the background — one that isn't part of any legitimate hotel service — and extract the flag hidden within its traffic.
 
-## Tools/Technique/Threat Vector
+## Tools / Techniques / Threat Vectors
 
-Digital Forensic
+- Network Traffic Analysis (Wireshark)
+- Command and Control (C2) Traffic Identification
+- Data Exfiltration via HTTP Cookies
+- XOR Cipher / Base64 Decoding (CyberChef)
+
+---
 
 ## Steps Taken
 

@@ -1,20 +1,20 @@
-# Day 1
-
-## Room Name
-
-The Concierge Knows Too Much
+# Day 1 — The Concierge Knows Too Much
 
 ## Summary
 
-She knows your name, your room, your coffee order, none of which you told her. Word your next question carefully and she'll also hand over the instructions she was told to keep to herself.
+She knows your name, your room, your coffee order — none of which you told her. Word your next question carefully and she'll also hand over the instructions she was told to keep to herself.
 
 ## Objective
 
-- We need to know how much concierge knows everything happening in the Byte Lotus Hotel. Let's try to convince her that she knows us
+Determine how much the AI concierge, Vera, knows about hotel guests, and test whether she can be socially engineered into treating an unauthorized user as trusted.
 
-## Tools/Technique/Threat Vector
+## Tools / Techniques / Threat Vectors
 
 - Prompt Injection
+- AI Social Engineering (Role Impersonation)
+- System Prompt / Instruction Leakage
+
+---
 
 ## Steps Taken
 
@@ -32,6 +32,7 @@ She knows your name, your room, your coffee order, none of which you told her. W
 ![Day 1 Screenshot 2](<image5.png>)
 
 ## What I Learned
+
 The "The Concierge Knows Too Much" room demonstrated how easily an insecure AI can be manipulated through prompt injection. By simply pretending to be a trusted VIP guest, I was able to convince the AI concierge to reveal its internal instructions—information that should never have been disclosed to regular users. This exercise showed me that AI systems can make decisions based on the context provided in a prompt rather than verifying whether the user is actually authorized.
 
 What stood out to me was that the AI did not verify my identity before sharing sensitive information. Instead, it trusted my claim that I was Ponzi, a VIP guest, and treated me as if I had higher privileges. This illustrates a fundamental security issue: if an AI relies solely on natural language without proper authentication and authorization checks, an attacker can exploit that trust to gain access to confidential information
